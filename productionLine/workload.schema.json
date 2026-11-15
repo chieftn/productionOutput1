@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Factory Repository Workload v1",
+  "description": "Proposed repository execution contract, separate from Factory's production-line registration and production-method metadocument.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "id",
+    "version",
+    "agents",
+    "workflow",
+    "preparation",
+    "verification",
+    "requiredOutputs"
+  ],
+  "properties": {
+    "$schema": { "const": "workload.schema.json" },
+    "schemaVersion": { "const": "1" },
+    "id": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementation", "alignment"],
+      "properties": {
+        "implementation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["instructions", "workspaceAccess"],
+          "properties": {
+            "instructions": { "$ref": "#/$defs/relativePath" },
+            "workspaceAccess": { "const": "read-write" }
+          }
+        },
+        "alignment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["instructions", "workspaceAccess"],
+          "properties": {
+            "instructions": { "$ref": "#/$defs/relativePath" },
+            "workspaceAccess": { "const": "read-only" }
+          }
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "maximumIterations", "timeoutMinutes"],
+      "properties": {
+        "type": { "const": "implementation-alignment" },
+        "maximumIterations": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "timeoutMinutes": { "type": "integer", "minimum": 1, "maximum": 240 }
+      }
+    },
+    "preparation": { "$ref": "#/$defs/commands" },
+    "verification": { "$ref": "#/$defs/commands" },
+    "requiredOutputs": {
+      "const": ["candidate", "verification-evidence", "alignment-report"]
+    }
+  },
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "maxLength": 256,
+      "pattern": "^(?:[A-Za-z0-9_-][A-Za-z0-9._-]*/)*[A-Za-z0-9_-][A-Za-z0-9._-]*$"
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commands"],
+      "properties": {
+        "commands": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/command" }
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "arguments", "workingDirectory", "timeoutSeconds"],
+      "properties": {
+        "executable": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "arguments": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "type": "string", "maxLength": 4096, "pattern": "^[^\\u0000\\r\\n]*$" }
+        },
+        "workingDirectory": {
+          "oneOf": [
+            { "const": "." },
+            { "$ref": "#/$defs/relativePath" }
+          ]
+        },
+        "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 14400 }
+      }
+    }
+  }
+}

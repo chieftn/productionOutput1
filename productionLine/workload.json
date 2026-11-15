@@ -1,0 +1,32 @@
+{
+  "$schema": "workload.schema.json",
+  "schemaVersion": "1",
+  "id": "production-output-development",
+  "version": "1.0.0",
+  "agents": {
+    "implementation": {
+      "instructions": "agents/implementation.md",
+      "workspaceAccess": "read-write"
+    },
+    "alignment": {
+      "instructions": "agents/alignment.md",
+      "workspaceAccess": "read-only"
+    }
+  },
+  "workflow": {
+    "type": "implementation-alignment",
+    "maximumIterations": 3,
+    "timeoutMinutes": 30
+  },
+  "preparation": {
+    "commands": []
+  },
+  "verification": {
+    "commands": []
+  },
+  "requiredOutputs": [
+    "candidate",
+    "verification-evidence",
+    "alignment-report"
+  ]
+}
