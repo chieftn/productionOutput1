@@ -17,7 +17,7 @@ This is a **repository workload**, not a replacement for the existing Factory
 [production-line product/method metadocument](https://github.com/chieftn/softwarePlant/blob/daf3d5bd5f1f2241c930d8d3399f76cc719df4c0/schemas/production-line.schema.json)
 or the service's registered line definition. Those describe different ownership
 boundaries. `schemaVersion: "1"` identifies this execution contract;
-`version: "1.0.0"` is its authoring version. Neither replaces a pinned Git commit.
+`version: "1.0.1"` is its authoring version. Neither replaces a pinned Git commit.
 
 ## Files
 
@@ -109,6 +109,14 @@ A linked **draft PR** is a subsequent worker operation only when the mission,
 server policy and local policy authorize publication. Preserve the resulting PR
 reference and reconcile an uncertain push/PR response before retrying. Do not
 automatically merge, release, or close the issue as accepted.
+
+`workflow.completionCriterion` is required and supports only
+`pull_request_merged`. A checked candidate, published PR or human approval alone
+does not complete the mission. Factory must verify that the exact owned PR and
+candidate were merged, and confirm prior worker termination before the next
+issue can be claimed. A PR closed without merging retains ownership and requires
+reconciliation; it is not successful completion. Human review/merge waiting uses
+the fixed mission deadline, not a new execution budget.
 
 ## Revocation and stopping
 
