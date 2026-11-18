@@ -27,6 +27,7 @@ Assert-True (@(Get-WorkloadErrors ($workload | ConvertTo-Json -Depth 30) $root -
 foreach ($case in @(
     @{ field = 'schemaVersion'; value = '2' },
     @{ field = 'workflow.type'; value = 'arbitrary-graph' },
+    @{ field = 'workflow.completionCriterion'; value = 'pull_request_approved' },
     @{ field = 'workflow.maximumIterations'; value = 0 },
     @{ field = 'workflow.maximumIterations'; value = 21 },
     @{ field = 'workflow.timeoutMinutes'; value = 241 },
@@ -42,6 +43,10 @@ foreach ($case in @(
 $workload = Read-Fixture
 $workload.workflow.plugins = @('unapproved-extension')
 Assert-Rejected $workload 'Undeclared workflow extensions must be rejected.'
+
+$workload = Read-Fixture
+$workload.workflow.Remove('completionCriterion')
+Assert-Rejected $workload 'An explicit workflow completion criterion is required.'
 
 foreach ($path in @('../README.md', '/etc/passwd', 'C:\outside.md', 'agents/missing.md', 'agents/implementation.md')) {
     $workload = Read-Fixture

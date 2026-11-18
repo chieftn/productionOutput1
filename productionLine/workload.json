@@ -2,7 +2,7 @@
   "$schema": "workload.schema.json",
   "schemaVersion": "1",
   "id": "production-output-development",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "agents": {
     "implementation": {
       "instructions": "agents/implementation.md",
@@ -16,7 +16,8 @@
   "workflow": {
     "type": "implementation-alignment",
     "maximumIterations": 3,
-    "timeoutMinutes": 30
+    "timeoutMinutes": 30,
+    "completionCriterion": "pull_request_merged"
   },
   "preparation": {
     "commands": []
