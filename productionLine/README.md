@@ -17,7 +17,7 @@ This is a **repository workload**, not a replacement for the existing Factory
 [production-line product/method metadocument](https://github.com/chieftn/softwarePlant/blob/daf3d5bd5f1f2241c930d8d3399f76cc719df4c0/schemas/production-line.schema.json)
 or the service's registered line definition. Those describe different ownership
 boundaries. `schemaVersion: "1"` identifies this execution contract;
-`version: "1.0.1"` is its authoring version. Neither replaces a pinned Git commit.
+`version: "1.0.2"` is its authoring version. Neither replaces a pinned Git commit.
 
 ## Files
 
@@ -28,6 +28,9 @@ boundaries. `schemaVersion: "1"` identifies this execution contract;
 - `agents/alignment.md`: independent, read-only Alignment instructions.
 - `Validate-Workload.ps1`, `tests/`: authoring validation,
   not runtime bootstrap or a product dependency.
+- `Prepare-Verification.sh`, `verification-tools.sh`: checksum-pinned JSON
+  verifier preparation using existing worker tools.
+- `Verify-Package.sh`, `package-check.jq`: actual candidate package verification.
 
 The worker must pin the manifest, schema and instruction files from the same
 source/workload commit and retain their digest in the frozen mission snapshot.
@@ -74,16 +77,38 @@ a transport retry does not reset them. Reuse no SDK conversation across missions
 This is one supported sequential loop, not an arbitrary workflow graph, plugin
 system or scheduler.
 
-## Commands and current blocker
+## Commands and first package task
 
-This repository currently contains no product project, package manifest, build or
-test suite. Therefore both command lists are empty. An empty preparation list
-can be valid; an empty **project verification** list must block execution.
-Validating this folder is not sufficient verification of a future product change.
-Do not choose a language/framework or invent build commands to hide that gap.
+The first product task is a minimal private root `package.json`: a valid
+lowercase package name, SemVer version and `private: true`, with no dependencies,
+devDependencies or scripts. The worker must implement that task. This setup
+does not create `package.json`; project verification deliberately fails until
+the candidate contains it.
 
-Once the product stack and checks are agreed, add actual preparation/verification
-commands to `workload.json` and review that revision before enabling execution.
+Preparation runs `sh productionLine/Prepare-Verification.sh`. It downloads
+`jq` **1.8.2** from its fixed GitHub release over HTTPS and verifies a pinned
+SHA-256 before executing it. Linux x64 uses `jq-linux-amd64`, checksum
+`b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f`.
+Git for Windows x64 authoring tests use `jq-windows-amd64.exe`, checksum
+`a6fc67fedaf9128a3309a1e2ebb8b986aeccf70122ee46d2cb4849e423f0c627`.
+These digests come from the official [jq release](https://github.com/jqlang/jq/releases/tag/jq-1.8.2).
+The tool is cached outside the checkout under
+`${XDG_CACHE_HOME:-$HOME/.cache}/production-output-verification/jq-1.8.2`,
+not added to the product or committed. The cache is reusable; a checksum mismatch
+fails explicitly. Every verification invocation rechecks the binary checksum.
+
+Verification runs `sh productionLine/Verify-Package.sh` against the root
+manifest. It rejects missing/linked/oversized files, malformed or multiple JSON
+documents, duplicate value paths, invalid names/versions, non-private manifests,
+and the three prohibited fields even when empty. Optional non-executable
+metadata is allowed. It uses no Node installation, npm dependencies or .NET
+build SDK. The installed worker must provide `sh`, `curl`, `uname`, `sha256sum`,
+`mktemp`, `wc` and the other normal shell/core utilities, plus outbound HTTPS
+access to the pinned release. Preparation/download failure blocks the run;
+schema validity is not tool or network authorization.
+
+These are task-specific checks, not a build/test stack for future features.
+Revisit them when the product gains additional requirements.
 Each command specifies a bare `executable`, an `arguments` array, a
 repository-root-relative `workingDirectory` (`.` for the root), and a positive
 `timeoutSeconds`. Arguments are passed directly, not concatenated into a shell
@@ -143,8 +168,19 @@ pwsh -File .\productionLine\tests\Test-Workload.ps1
 On Linux, use forward slashes in these commands.
 The validator checks the local schema, manifest and referenced instructions.
 It deliberately reports definition validity separately from project readiness.
-`pwsh -File .\productionLine\Validate-Workload.ps1 -RequireProjectVerification` fails for this
-initial definition with the explicit missing-project-verification blocker.
+`pwsh -File .\productionLine\Validate-Workload.ps1 -RequireProjectVerification`
+now passes the configured-command gate.
 Even after that check passes, it does not prove worker prerequisites or authority.
 These are local authoring checks, not product execution or worker readiness
 certification. CI automation is not included in this initial contract.
+
+Test the actual package verifier with temporary positive/negative fixtures:
+
+```text
+sh productionLine/tests/Test-Package.sh
+```
+
+On Windows, run this through Git for Windows `sh`, not WSL. It prepares the pinned
+Windows verifier; it does not install a product package or use model credentials.
+Running `sh productionLine/Verify-Package.sh` against this repository before the
+worker creates `package.json` should fail, not report readiness.
