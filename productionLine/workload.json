@@ -2,7 +2,7 @@
   "$schema": "workload.schema.json",
   "schemaVersion": "1",
   "id": "production-output-development",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "agents": {
     "implementation": {
       "instructions": "agents/implementation.md",
@@ -20,10 +20,24 @@
     "completionCriterion": "pull_request_merged"
   },
   "preparation": {
-    "commands": []
+    "commands": [
+      {
+        "executable": "sh",
+        "arguments": ["productionLine/Prepare-Verification.sh"],
+        "workingDirectory": ".",
+        "timeoutSeconds": 180
+      }
+    ]
   },
   "verification": {
-    "commands": []
+    "commands": [
+      {
+        "executable": "sh",
+        "arguments": ["productionLine/Verify-Package.sh"],
+        "workingDirectory": ".",
+        "timeoutSeconds": 30
+      }
+    ]
   },
   "requiredOutputs": [
     "candidate",

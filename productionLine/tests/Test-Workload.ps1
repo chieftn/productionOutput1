@@ -18,7 +18,10 @@ function Assert-Rejected($Workload, [string]$Message, [string]$Directory = $root
 }
 
 Assert-True (@(Get-WorkloadErrors $original $root).Count -eq 0) 'The checked-in definition must validate.'
-Assert-True (@(Get-WorkloadErrors $original $root -RequireProjectVerification).Count -gt 0) 'Definition validity must not hide missing project verification.'
+Assert-True (@(Get-WorkloadErrors $original $root -RequireProjectVerification).Count -eq 0) 'The definition must configure project verification.'
+$workload = Read-Fixture
+$workload.verification.commands = @()
+Assert-True (@(Get-WorkloadErrors ($workload | ConvertTo-Json -Depth 30) $root -RequireProjectVerification).Count -gt 0) 'Definition validity must not hide missing project verification.'
 $workload = Read-Fixture
 $command = @{ executable = 'project-tool'; arguments = @('test'); workingDirectory = '.'; timeoutSeconds = 120 }
 $workload.verification.commands = @($command)
